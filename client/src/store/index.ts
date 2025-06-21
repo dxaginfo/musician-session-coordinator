@@ -1,15 +1,11 @@
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
+import { setupListeners } from '@reduxjs/toolkit/query';
 import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage'; // defaults to localStorage
-import thunk from 'redux-thunk';
+import storage from 'redux-persist/lib/storage';
 
-// Reducers
 import authReducer from './authSlice';
-import projectsReducer from './projectsSlice';
-import musiciansReducer from './musiciansSlice';
-import sessionsReducer from './sessionsSlice';
-import messagesReducer from './messagesSlice';
 import uiReducer from './uiSlice';
+import { api } from './services/api';
 
 // Persist config
 const persistConfig = {
@@ -18,26 +14,30 @@ const persistConfig = {
   whitelist: ['auth'], // only auth will be persisted
 };
 
-const rootReducer = combineReducers({
-  auth: authReducer,
-  projects: projectsReducer,
-  musicians: musiciansReducer,
-  sessions: sessionsReducer,
-  messages: messagesReducer,
-  ui: uiReducer,
-});
+const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
-// Create store
-export const store = configureStore({
-  reducer: persistedReducer,
-  middleware: [thunk],
+const store = configureStore({
+  reducer: {
+    auth: persistedAuthReducer,
+    ui: uiReducer,
+    [api.reducerPath]: api.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        // Ignore these action types
+        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+      },
+    }).concat(api.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
+// Optional, but required for refetchOnFocus/refetchOnReconnect behaviors
+setupListeners(store.dispatch);
+
 export const persistor = persistStore(store);
 
-// Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+export default store;
