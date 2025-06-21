@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
-import { getCurrentUser, selectIsAuthenticated, selectAuthLoading, selectAuth } from '../../store/authSlice';
+import { getCurrentUser, selectAuth } from '../../store/authSlice';
 import { AppDispatch } from '../../store';
 
 interface ProtectedRouteProps {
